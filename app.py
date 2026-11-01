@@ -2,6 +2,7 @@
 
 Run:  python app.py   then open http://127.0.0.1:5000
 """
+import hmac
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -22,10 +23,13 @@ if env_file.exists():
             os.environ.setdefault(key.strip(), value.strip())
 
 if not os.environ.get("SARVAM_API_KEY"):
-    raise SystemExit("SARVAM_API_KEY is not set. Add it to .env.")
+    raise SystemExit("SARVAM_API_KEY is not set. Add it to .env (local) or the Vercel project's Environment Variables.")
 
 client = SarvamAI(api_subscription_key=os.environ["SARVAM_API_KEY"])
-app = Flask(__name__, static_folder="static")
+# Optional: if set, visitors must enter this code before the app calls Sarvam (protects your credits)
+ACCESS_CODE = os.environ.get("ACCESS_CODE", "")
+PUBLIC_DIR = HERE / "public"  # Vercel serves this folder from its CDN; Flask serves it locally
+app = Flask(__name__, static_folder=None)
 
 CHAT_MODEL = "sarvam-105b-conversations"
 STT_MODEL = "saaras:v4"
@@ -92,14 +96,22 @@ def tts(text: str, lang: str) -> str:
     return res.audios[0]
 
 
+@app.before_request
+def check_access_code():
+    if ACCESS_CODE and request.path.startswith("/api/") and request.path != "/api/options":
+        given = request.headers.get("X-Access-Code", "")
+        if not hmac.compare_digest(given.encode(), ACCESS_CODE.encode()):
+            return jsonify(error="Wrong or missing access code.", need_code=True), 401
+
+
 @app.get("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(PUBLIC_DIR, "index.html")
 
 
 @app.get("/api/options")
 def options():
-    return jsonify(languages=LANGUAGES, scenarios=list(SCENARIOS))
+    return jsonify(languages=LANGUAGES, scenarios=list(SCENARIOS), needs_code=bool(ACCESS_CODE))
 
 
 @app.post("/api/turn")

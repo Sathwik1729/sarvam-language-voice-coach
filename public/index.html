@@ -44,6 +44,7 @@
   .card b { display: block; }
   .card small { color: var(--muted); }
   .card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+  .code-in { width: min(320px, 100%); padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
   .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 12px; padding: 12px 22px; font-weight: 700; }
   .primary:disabled { opacity: .5; cursor: default; }
   .start-row { margin: 28px 0 48px; }
@@ -111,6 +112,11 @@
     <h1>Practise real conversations in English, with a coach who speaks your language.</h1>
     <p class="lead">Talk out loud. When you don't know a word, just say it in your own language. Bolo understands, shows you the natural English, and explains your mistakes in your language.</p>
 
+    <div id="codeBox" hidden>
+      <div class="step">Access code</div>
+      <input id="codeIn" class="code-in" placeholder="Enter the code you were given" autocomplete="off">
+    </div>
+
     <div class="step">1 · Your language</div>
     <div class="chips" id="langs"></div>
 
@@ -177,6 +183,25 @@ function toast(msg) {
   clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").hidden = true, 4000);
 }
 
+// ---- access code (only used when the server sets ACCESS_CODE) ----
+function getCode() { try { return localStorage.getItem("bolo_code") || ""; } catch { return ""; } }
+function setCode(v) { try { localStorage.setItem("bolo_code", v); } catch {} }
+$("codeIn").value = getCode();
+$("codeIn").oninput = () => setCode($("codeIn").value.trim());
+
+// fetch wrapper: adds the access code and turns error replies into thrown messages
+async function api(path, opts = {}) {
+  opts.headers = { ...(opts.headers || {}), "X-Access-Code": getCode() };
+  const r = await fetch(path, opts);
+  const j = await r.json().catch(() => ({ error: "The server didn't respond properly." }));
+  if (r.status === 401 && j.need_code) {
+    $("restart").click();
+    $("codeBox").hidden = false; $("codeIn").focus();
+  }
+  if (!r.ok) throw new Error(j.error || "Something went wrong.");
+  return j;
+}
+
 // ---- audio ----
 let current;
 function play(b64) {
@@ -186,10 +211,8 @@ function play(b64) {
 }
 async function speak(text, lang) {
   try {
-    const r = await fetch("/api/speak", { method: "POST", headers: { "Content-Type": "application/json" },
+    const j = await api("/api/speak", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, lang }) });
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error);
     play(j.audio);
   } catch (e) { toast(e.message || "Couldn't play audio."); }
 }
@@ -199,9 +222,9 @@ function playBtn(label, onClick) {
 
 // ---- setup ----
 async function init() {
-  const r = await fetch("/api/options");
-  const { languages } = await r.json();
+  const { languages, needs_code } = await api("/api/options");
   state.languages = languages;
+  $("codeBox").hidden = !needs_code;
   for (const [code, name] of Object.entries(languages)) {
     const b = el("button", "chip", name);
     b.setAttribute("aria-pressed", "false");
@@ -301,9 +324,7 @@ async function sendTurn({ audio, text }) {
   if (audio) fd.append("audio", audio.blob, audio.name);
   if (text) fd.append("text", text);
   try {
-    const r = await fetch("/api/turn", { method: "POST", body: fd });
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error);
+    const j = await api("/api/turn", { method: "POST", body: fd });
     setBusy(false);
     if (j.transcript) {
       addMe(j.transcript, j.coach);

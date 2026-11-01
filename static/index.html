@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bolo · English coach</title>
+<style>
+  :root {
+    --bg: #faf7f2; --panel: #ffffff; --ink: #1f1d1a; --muted: #6b655c; --line: #e8e2d8;
+    --accent: #d9480f; --accent-ink: #fff; --accent-soft: #fff0e8;
+    --good: #2b8a3e; --good-soft: #ebfbee; --fix: #c92a2a; --fix-soft: #fff5f5;
+    --coach: #f1ede6; --me: #1f1d1a; --me-ink: #faf7f2;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161513; --panel: #201f1c; --ink: #f1ede6; --muted: #a39d93; --line: #34312c;
+      --accent: #ff7a3d; --accent-ink: #1a0f08; --accent-soft: #3a2116;
+      --good: #69db7c; --good-soft: #1b2e1f; --fix: #ff8787; --fix-soft: #3a1d1d;
+      --coach: #2a2824; --me: #f1ede6; --me-ink: #161513;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+  header { padding-block: 20px 8px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .logo { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+  .logo span { color: var(--accent); }
+  .tag { color: var(--muted); }
+
+  /* Setup */
+  #setup h1 { font-size: clamp(26px, 4.5vw, 40px); line-height: 1.15; margin: 24px 0 8px; letter-spacing: -0.02em; max-width: 18em; }
+  #setup p.lead { color: var(--muted); margin: 0 0 28px; max-width: 38em; }
+  .step { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 24px 0 10px; font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--line); background: var(--panel); padding: 8px 14px; border-radius: 999px; }
+  .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 10px; }
+  .card { text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 16px; }
+  .card b { display: block; }
+  .card small { color: var(--muted); }
+  .card[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+  .primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 12px; padding: 12px 22px; font-weight: 700; }
+  .primary:disabled { opacity: .5; cursor: default; }
+  .start-row { margin: 28px 0 48px; }
+
+  /* Session */
+  #session { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; padding-bottom: 24px; }
+  @media (max-width: 820px) { #session { grid-template-columns: 1fr; } }
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .topbar .ctx { color: var(--muted); font-size: 14px; }
+  .ghost { background: none; border: 1px solid var(--line); border-radius: 10px; padding: 6px 12px; font-size: 14px; }
+  #log { display: flex; flex-direction: column; gap: 14px; min-height: 40vh; }
+  .msg { max-width: 86%; padding: 12px 14px; border-radius: 16px; }
+  .msg.coach { background: var(--coach); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.me { background: var(--me); color: var(--me-ink); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .who { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin-bottom: 2px; }
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .mini { background: none; border: 1px solid currentColor; opacity: .75; border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+  .mini:hover { opacity: 1; }
+  .trans { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line); color: var(--muted); }
+  .feedback { align-self: flex-end; max-width: 86%; display: flex; flex-direction: column; gap: 8px; }
+  .fb { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; font-size: 15px; }
+  .fb .said { color: var(--fix); text-decoration: line-through; }
+  .fb .better { color: var(--good); font-weight: 600; }
+  .fb .why { color: var(--muted); margin-top: 4px; }
+  .fb .native-why { color: var(--ink); }
+  .fb .en-why { font-size: 13px; }
+  .fb.ok { background: var(--good-soft); border-color: transparent; color: var(--good); font-weight: 600; }
+  .fb.native { background: var(--accent-soft); border-color: transparent; }
+  .status { color: var(--muted); font-size: 14px; align-self: center; }
+
+  .composer { position: sticky; bottom: 0; background: var(--bg); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--line); margin-top: 16px; }
+  #mic { width: 64px; height: 64px; flex: none; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center; box-shadow: 0 4px 14px rgba(217,72,15,.3); }
+  #mic.rec { animation: pulse 1.2s infinite; background: var(--fix); }
+  #mic:disabled { opacity: .5; animation: none; }
+  @keyframes pulse { 50% { transform: scale(1.08); } }
+  .composer form { flex: 1; display: flex; gap: 8px; min-width: 0; }
+  .composer input { flex: 1; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; }
+  .composer .send { border: 1px solid var(--line); background: var(--panel); border-radius: 12px; padding: 0 16px; }
+  .hint { font-size: 13px; color: var(--muted); }
+
+  aside { align-self: start; position: sticky; top: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+  .box h3 { margin: 0 0 8px; font-size: 15px; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; }
+  .stat small { color: var(--muted); }
+  #phrases { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  #phrases li { font-size: 14px; display: flex; gap: 8px; align-items: flex-start; justify-content: space-between; }
+  #phrases .empty { color: var(--muted); }
+  #toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+    padding: 10px 16px; border-radius: 10px; max-width: calc(100% - 32px); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">Bolo<span>.</span></div>
+    <div class="tag">Speak English. Get stuck? Switch to your language.</div>
+  </header>
+
+  <!-- Step 1: setup -->
+  <section id="setup">
+    <h1>Practise real conversations in English, with a coach who speaks your language.</h1>
+    <p class="lead">Talk out loud. When you don't know a word, just say it in your own language. Bolo understands, shows you the natural English, and explains your mistakes in your language.</p>
+
+    <div class="step">1 · Your language</div>
+    <div class="chips" id="langs"></div>
+
+    <div class="step">2 · Pick a situation</div>
+    <div class="cards" id="scenarios"></div>
+
+    <div class="start-row"><button class="primary" id="start" disabled>Start practising</button></div>
+  </section>
+
+  <!-- Step 2: conversation -->
+  <section id="session" hidden>
+    <div>
+      <div class="topbar">
+        <div class="ctx" id="ctx"></div>
+        <button class="ghost" id="restart">New situation</button>
+      </div>
+      <div id="log" aria-live="polite"></div>
+      <div class="composer">
+        <button id="mic" aria-label="Tap to speak">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        </button>
+        <form id="textForm">
+          <input id="textIn" placeholder="Or type here…" autocomplete="off">
+          <button class="send" type="submit">Send</button>
+        </form>
+      </div>
+      <div class="hint" id="micHint">Tap the mic, speak (up to 30 seconds), tap again to send.</div>
+    </div>
+
+    <aside>
+      <div class="box stats">
+        <div class="stat"><b id="turns">0</b><small>times you spoke</small></div>
+        <div class="stat"><b id="avg">–</b><small>avg. clarity / 5</small></div>
+      </div>
+      <div class="box">
+        <h3>Phrases to remember</h3>
+        <ul id="phrases"><li class="empty">Corrections and new English phrases will collect here.</li></ul>
+      </div>
+    </aside>
+  </section>
+</div>
+<div id="toast" hidden></div>
+
+<script>
+const SCENARIOS = {
+  interview:     ["Job interview", "Answer common interview questions"],
+  intro:         ["Introduce yourself", "Meet a new colleague"],
+  restaurant:    ["At a restaurant", "Order food and ask questions"],
+  doctor:        ["At the doctor", "Describe how you feel"],
+  customer_care: ["Customer care call", "Complain about a wrong bill"],
+  bank:          ["At the bank", "Open a savings account"],
+};
+const $ = (id) => document.getElementById(id);
+const state = { lang: null, scenario: null, languages: {}, history: [], scores: [], busy: false };
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function toast(msg) {
+  $("toast").textContent = msg; $("toast").hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => $("toast").hidden = true, 4000);
+}
+
+// ---- audio ----
+let current;
+function play(b64) {
+  if (current) current.pause();
+  current = new Audio("data:audio/wav;base64," + b64);
+  current.play().catch(() => {});
+}
+async function speak(text, lang) {
+  try {
+    const r = await fetch("/api/speak", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, lang }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    play(j.audio);
+  } catch (e) { toast(e.message || "Couldn't play audio."); }
+}
+function playBtn(label, onClick) {
+  const b = el("button", "mini", label); b.type = "button"; b.onclick = onClick; return b;
+}
+
+// ---- setup ----
+async function init() {
+  const r = await fetch("/api/options");
+  const { languages } = await r.json();
+  state.languages = languages;
+  for (const [code, name] of Object.entries(languages)) {
+    const b = el("button", "chip", name);
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { state.lang = code; select($("langs"), b); };
+    $("langs").append(b);
+  }
+  for (const [key, [title, sub]] of Object.entries(SCENARIOS)) {
+    const b = el("button", "card"); b.append(el("b", null, title), el("small", null, sub));
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { state.scenario = key; select($("scenarios"), b); };
+    $("scenarios").append(b);
+  }
+}
+function select(group, btn) {
+  for (const b of group.children) b.setAttribute("aria-pressed", String(b === btn));
+  $("start").disabled = !(state.lang && state.scenario);
+}
+$("start").onclick = () => {
+  $("setup").hidden = true; $("session").hidden = false;
+  $("ctx").textContent = `${SCENARIOS[state.scenario][0]} · help in ${state.languages[state.lang]}`;
+  sendTurn({});
+};
+$("restart").onclick = () => {
+  if (current) current.pause();
+  state.history = []; state.scores = [];
+  $("log").innerHTML = ""; $("phrases").innerHTML = '<li class="empty">Corrections and new English phrases will collect here.</li>';
+  $("turns").textContent = "0"; $("avg").textContent = "–";
+  $("session").hidden = true; $("setup").hidden = false;
+};
+
+// ---- conversation ----
+function addCoach(c, audio) {
+  const m = el("div", "msg coach");
+  m.append(el("div", "who", "Coach"), el("div", null, c.reply));
+  const tools = el("div", "tools");
+  const trans = el("div", "trans", c.reply_translation || ""); trans.hidden = true;
+  tools.append(
+    playBtn("▶ Play again", () => play(audio)),
+    playBtn(`Show in ${state.languages[state.lang]}`, () => trans.hidden = !trans.hidden),
+  );
+  m.append(tools, trans);
+  $("log").append(m);
+}
+function addMe(transcript, c) {
+  const m = el("div", "msg me");
+  m.append(el("div", "who", "You"), el("div", null, transcript));
+  $("log").append(m);
+
+  const fbWrap = el("div", "feedback");
+  if (c.used_own_language && c.english_version) {
+    const f = el("div", "fb native");
+    f.append(el("div", "why", "In English you can say:"), el("div", "better", c.english_version));
+    const t = el("div", "tools"); t.append(playBtn("▶ Hear it", () => speak(c.english_version, "en-IN")));
+    f.append(t); fbWrap.append(f);
+    addPhrase(c.english_version);
+  }
+  for (const x of c.feedback || []) {
+    const f = el("div", "fb");
+    f.append(el("span", "said", x.you_said), document.createTextNode(" → "), el("span", "better", x.better));
+    if (x.why_native) f.append(el("div", "why native-why", x.why_native));
+    if (x.why) f.append(el("div", "why en-why", x.why));
+    const t = el("div", "tools");
+    t.append(playBtn("▶ Hear correct English", () => speak(x.better, "en-IN")));
+    if (x.why_native) t.append(playBtn(`▶ Explain in ${state.languages[state.lang]}`, () => speak(x.why_native, state.lang)));
+    f.append(t); fbWrap.append(f);
+    addPhrase(x.better);
+  }
+  if (!fbWrap.children.length) fbWrap.append(el("div", "fb ok", "✓ Clear and correct. Nice!"));
+  $("log").append(fbWrap);
+
+  if (c.score > 0) {
+    state.scores.push(c.score);
+    $("turns").textContent = state.scores.length;
+    $("avg").textContent = (state.scores.reduce((a, b) => a + b, 0) / state.scores.length).toFixed(1);
+  }
+}
+function addPhrase(text) {
+  const list = $("phrases");
+  list.querySelector(".empty")?.remove();
+  if ([...list.children].some(li => li.dataset.t === text)) return;
+  const li = el("li"); li.dataset.t = text;
+  li.append(el("span", null, text), playBtn("▶", () => speak(text, "en-IN")));
+  list.prepend(li);
+}
+function setBusy(on, label) {
+  state.busy = on;
+  $("mic").disabled = on; $("textIn").disabled = on;
+  $("status")?.remove();
+  if (on) { const s = el("div", "status", label); s.id = "status"; $("log").append(s); s.scrollIntoView({ behavior: "smooth", block: "end" }); }
+}
+
+async function sendTurn({ audio, text }) {
+  setBusy(true, audio ? "Listening to you…" : "Coach is thinking…");
+  const fd = new FormData();
+  fd.append("lang", state.lang); fd.append("scenario", state.scenario);
+  fd.append("history", JSON.stringify(state.history));
+  if (audio) fd.append("audio", audio.blob, audio.name);
+  if (text) fd.append("text", text);
+  try {
+    const r = await fetch("/api/turn", { method: "POST", body: fd });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    setBusy(false);
+    if (j.transcript) {
+      addMe(j.transcript, j.coach);
+      state.history.push({ role: "user", content: j.transcript });
+    }
+    addCoach(j.coach, j.audio);
+    state.history.push({ role: "assistant", content: JSON.stringify(j.coach) });
+    play(j.audio);
+    $("log").lastElementChild.scrollIntoView({ behavior: "smooth", block: "end" });
+  } catch (e) {
+    setBusy(false);
+    toast(e.message || "Something went wrong. Try again.");
+  }
+}
+
+$("textForm").onsubmit = (e) => {
+  e.preventDefault();
+  const t = $("textIn").value.trim();
+  if (!t || state.busy) return;
+  $("textIn").value = "";
+  sendTurn({ text: t });
+};
+
+// ---- recording: tap to start, tap to stop (auto-stops at 29s) ----
+let rec, chunks, stopTimer;
+$("mic").onclick = async () => {
+  if (rec && rec.state === "recording") return rec.stop();
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { return toast("Please allow microphone access, or type instead."); }
+  const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+  rec = new MediaRecorder(stream, type ? { mimeType: type } : {});
+  chunks = [];
+  rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+  rec.onstop = () => {
+    clearTimeout(stopTimer);
+    stream.getTracks().forEach(t => t.stop());
+    $("mic").classList.remove("rec"); $("micHint").textContent = "Tap the mic, speak (up to 30 seconds), tap again to send.";
+    const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+    if (blob.size < 2000) return toast("That was too short. Try again.");
+    const ext = blob.type.includes("mp4") ? "m4a" : "webm";
+    sendTurn({ audio: { blob, name: "speech." + ext } });
+  };
+  if (current) current.pause();
+  rec.start();
+  $("mic").classList.add("rec"); $("micHint").textContent = "Listening… tap again when you're done.";
+  stopTimer = setTimeout(() => rec.state === "recording" && rec.stop(), 29000);
+};
+
+init();
+</script>
+</body>
+</html>
